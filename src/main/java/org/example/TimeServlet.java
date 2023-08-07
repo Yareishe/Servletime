@@ -1,20 +1,13 @@
 package org.example;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.context.WebContext;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
 
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
@@ -23,9 +16,10 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/time")
 public class TimeServlet extends HttpServlet {
-    private transient static TemplateEngine engine;
+    private static TemplateEngine engine;
+
     @Override
-    public void init() throws ServletException {
+    public void init() {
         engine = new TemplateEngine();
         ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(getServletContext());
         templateResolver.setTemplateMode(TemplateMode.HTML);
@@ -34,8 +28,7 @@ public class TimeServlet extends HttpServlet {
         engine.setTemplateResolver(templateResolver);
     }
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws  IOException {
         String timezone = req.getParameter("timezone");
         Map<String, Object> respMap = new LinkedHashMap<>();
 
@@ -48,16 +41,26 @@ public class TimeServlet extends HttpServlet {
                 }
                 log(cookie.getName() + "="+cookie.getValue());
             }
+
         }
         log(timezone);
-        resp.addCookie(new Cookie("LasTimezone",timezone));
         resp.setContentType("text/html");
         if (timezone == null || timezone.isEmpty()) {
-            respMap.put("timezone",getDate("UTC"));
-        } else if (LasTimezone.equals(timezone)) {
-            respMap.put("timezone",getDate(LasTimezone));
-        } else {
-            respMap.put("timezone", getDate(timezone));
+            if("UTC".equals(LasTimezone)){
+                respMap.put("timezone",getDate(LasTimezone));
+            }
+            else {
+                respMap.put("timezone", getDate("UTC"));
+            }
+            resp.addCookie(new Cookie("LasTimezone","UTC"));
+        }else {
+            if (timezone.equals(LasTimezone)) {
+                respMap.put("timezone", getDate(LasTimezone));
+            }
+            else {
+                respMap.put("timezone", getDate(timezone));
+            }
+            resp.addCookie(new Cookie("LasTimezone",timezone));
         }
 
         Context simplecontext = new Context(req.getLocale(), respMap);
