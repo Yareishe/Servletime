@@ -32,12 +32,12 @@ public class TimeServlet extends HttpServlet {
         String timezone = req.getParameter("timezone");
         Map<String, Object> respMap = new LinkedHashMap<>();
 
-        String LasTimezone = null;
+        String lasTimezone = null;
 
         if(req.getCookies()!=null){
             for (Cookie cookie:req.getCookies()) {
-                if (cookie.getName().equals("LasTimezone")){
-                    LasTimezone = cookie.getValue();
+                if (cookie.getName().equals("lasTimezone")){
+                    lasTimezone = cookie.getValue();
                 }
                 log(cookie.getName() + "="+cookie.getValue());
             }
@@ -46,21 +46,21 @@ public class TimeServlet extends HttpServlet {
         log(timezone);
         resp.setContentType("text/html");
         if (timezone == null || timezone.isEmpty()) {
-            if("UTC".equals(LasTimezone)){
-                respMap.put("timezone",getDate(LasTimezone));
-            }
-            else {
+            if(lasTimezone == null){
                 respMap.put("timezone", getDate("UTC"));
             }
-            resp.addCookie(new Cookie("LasTimezone","UTC"));
+            else {
+                respMap.put("timezone",getDate(lasTimezone));
+            }
+            //resp.addCookie(new Cookie("LasTimezone",null));
         }else {
-            if (timezone.equals(LasTimezone)) {
-                respMap.put("timezone", getDate(LasTimezone));
+            if (timezone.equals(lasTimezone)) {
+                respMap.put("timezone", getDate(lasTimezone));
             }
             else {
                 respMap.put("timezone", getDate(timezone));
             }
-            resp.addCookie(new Cookie("LasTimezone",timezone));
+            resp.addCookie(new Cookie("lasTimezone",timezone));
         }
 
         Context simplecontext = new Context(req.getLocale(), respMap);
@@ -70,6 +70,8 @@ public class TimeServlet extends HttpServlet {
 
     public static String getDate(String param) {
         Date actualDate = new Date();
+        if(param == null) {
+            param = "UTC";}
         DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z").withZone(ZoneId.of(param));
         return dateFormat.format(actualDate.toInstant());
     }
